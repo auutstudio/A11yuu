@@ -1,0 +1,79 @@
+body:not(.uu-debug) .uu-described,
+body:not(.uu-debug) .uu-hierarchy:not(:focus-visible),
+body:not(.uu-debug) .uu-decorative-alt {
+  clip: rect(1px, 1px, 1px, 1px);
+  clip-path: inset(50%);
+  height: 1px;
+  width: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+}
+a[aria-disabled="true"] {
+  filter: opacity(0.5)sepia(0.6);
+  cursor: not-allowed;
+}
+.uu-invisible,
+.uu-visib-hidden {
+  visibility: hidden;
+}
+.uu-dont-show {
+  display: none !important;
+}
+.uu-full-opacity {
+  opacity: 1;
+}
+.uu-white-text {
+  color: white !important;
+}
+.uu-collapse {
+  /* specific to each project */
+}
+.uu-grow {
+  /* specific to each project */
+}
+body.uu-default { 
+  /* no changes */ 
+}
+body.uu-hidevocab {
+  /* specific to each project */
+}
+body.uu-captioned {
+  /* specific to each project */
+}
+body.uu-keyboard {
+  /* specific to each project */
+}
+body.uu-contrast {
+  /* specific to each project */
+}
+body.uu-debug .uu-described,
+body.uu-debug .uu-hierarchy,
+body.uu-debug .uu-decorative-alt { 
+  color: white !important;
+}
+.uu-debug section,
+.uu-debug .section,
+section.uu-debug,
+.section.uu-debug {
+  outline: 1.5px solid magenta;
+  outline-offset: -1.5px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.uu-debug .container,
+.container.uu-debug {
+  outline: 1px dotted cyan;
+  outline-offset: -1px;
+  border-radius: 1px;
+}
+.uu-debug [class^="spacer-"] {
+  background-color: rgba(62, 108, 255, 0.12);
+}
+.uu-debug *[suspect] {
+  outline: 3px dashed red;
+  outline-offset: -3px;
+  background: #ff000085;
+  background-color: #ff000085;
+}
