@@ -1,0 +1,176 @@
+ /* A11yuu-debug: Verbose reporting to the console
+  * Version: 0.9
+  *
+  * Copyright © 2024-2025 auut studio, findauut.com <info@findauut.com>
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  *
+  */
+
+
+(Ayuu.mode==="production") ? Ayuu.DEBUG = false : Ayuu.DEBUG = true;
+
+console.log(Ayuu.meta.name, " - ver. ", Ayuu.version + "\n"); 
+
+Ayuu.Cs = function(reporter, data) {
+  let indent = "  ";
+  switch (reporter) {
+
+  case 10:
+    console.log("⎵", data[0]);
+    break;
+  
+  case 50:
+    console.log("⎵ placed at:", data[0]);
+    break;
+  
+  case 100:
+    if (data[0]) {
+      console.log("Basepage scrolling:",data[0]);
+    } else {
+      console.log("Basepage scrolling:",data[0]," (Strict enforce:",data[1],")\n  scroll policy affects:",data[2]);
+    }
+    break;
+  
+  case 120:
+    console.log("focus tracking on:", data[0]);
+    break;
+  
+  case 130:
+    console.log("Will scan these regions", data[0], "\nfor tabstops...");
+    break;
+
+  case 135:
+    console.log(indent+"region:", data[0]);
+    break;
+
+  case 150:
+    if (data[0]==="prior") {
+      let zBefore = Ayuu.atDepth, 
+          zAfter  = data[1], 
+          reason  = "",
+          ascends  = "█▓▒░░░",
+          descends = "░░▒▓██";
+      console.log("\n");
+      if (zAfter === "+1") { zAfter = zBefore + 1;     }
+      if (zAfter <= -1)    { zAfter = zBefore + zAfter; }
+      if (zAfter > zBefore){ 
+        reason = " for  "+ data[2]; 
+        ascends = descends;
+      }
+      console.log(ascends+" depth", zBefore, "→", zAfter, reason);
+    } else {
+      console.log(" Curr depth: ", JSON.stringify(Ayuu.focus.depth), "\n Last focus: ", Ayuu.focus.prior, "\n");
+    }
+    break;
+  
+  case 160:
+    console.log(indent+"(no longer listening for Esc)");
+    break;
+  
+  case 200:
+    console.log("a Webflow-native lightbox will launch from a click on:"); 
+    console.log(indent+ data[1] +"  (thumbnail:", data[2], ")");
+    if (!data[0]) {
+      console.log(indent+"is fixable with alt to", filename, ": ", altx);
+    } else {
+      console.log(indent+"→ will be fixed with value from [uu-alt-text]");
+    }
+    break;
+  
+  case 220:
+    console.log(indent+"fixing webflow lightbox:", data[0]);
+    if (typeof(data[0][2])!=="string" || data[0][2]==="") {
+      console.log(indent+"although alt text was not provided."); 
+    }
+    break;
+  
+  case 240:
+    console.log("Lightbox was already closed; catching up.");
+    break;
+
+  case 300:
+    console.log("tip tracker reset: [0,0]");
+    break;
+
+  case 310:
+    console.log("⎵ at tip container ",Ayuu.focus.depth[3].toString()); 
+    break;
+  
+  case 320:
+    if (data[0]==1) {
+      console.log(indent+"[→Tab] from container ", Ayuu.focus.depth[3].toString());
+    } else if (data[0]== -1) {
+      console.log(indent+"[←Shft+Tab] from link ", Ayuu.focus.depth[3].toString()); 
+    } else if (data[0]==2) {
+      console.log(indent+"[→Tab] from link ", Ayuu.focus.depth[3].toString()); 
+    }
+    break;
+  
+  case 330:
+    if (data[0]==2) {
+      console.log("  ⎵ exited the tip");
+    } else if (data[0]==1) {
+      console.log("tip revealed");
+    } else if (data[0]==0) {
+      console.log("tip collapsed");
+    }
+    break;
+  
+  case 400:
+    console.log("these Better Boxes are initialized:");
+    break;
+  
+  case 410:
+    console.log(indent, data[0], data[1]);
+    break;
+  
+  case 420:
+    console.log(data[0], "needs these properties declared:\n", data[1], "\n  A11yuu is fixing on-the-fly, but it would be better to make these changes in your HTML.");
+    break;
+  
+  case 430:
+    console.log(indent+"Please give", data[0], "an `aria-label`: Having a short name for this dialog box would benefit screenreader users.)");
+    break;
+  
+  case 450:
+    console.log("\nabout to Unmount", data[0], "…");
+    console.log(indent, data[0], " (", data[1],")  was mounted by: ", data[2]," / returning focus to: ", data[2]);
+    break;
+  
+  case 500:
+    console.log("basepage: comparing keypress to available shortcuts"); 
+    break;
+  
+  case 550:
+    console.log(data[0], ": comparing keypress to numbered tabs 1 to ", data[1]); 
+    break;
+  
+  case 590:
+    console.log("retrieved Hi-Contrast buttons:", data[0]);
+    break;
+
+  case 0:
+    console.log("");
+    break;
+  
+  case -1:
+    console.log("");
+    break;
+  
+  case -2:
+    console.log("");
+    break;
+  
+  case -3:
+    console.log("");
+    break;
+  
+  default:
+
+  }
+};

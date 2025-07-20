@@ -1,0 +1,48 @@
+<script type="text/javascript" id="initialize_a11yuu">
+
+whenReady(function() { 
+
+  /*  Wire up the relevant parts of A11yuu            */
+  /*  comment out functionality that you don’t need   */
+
+  Ayuu.Helper.Sensors();
+  Ayuu.wf.AllowFixing();
+  Ayuu.focus.Init();
+  Ayuu.bbox.Init();
+  Ayuu.TogTips.Init();
+  Ayuu.setTrigger.ActivatesCaptions();
+  Ayuu.setTrigger.ActivatesShortcuts();
+  Ayuu.setTrigger.ActivatesContrast();
+  Ayuu.setTrigger.ActivatesToggleTips();
+
+
+  /*  Set listeners upon your desired triggers        */
+  /*  for launching each dialog:                      */
+      
+    // EXAMPLE:
+    // If your dialogs’ naming pattern were defined in
+    // the A11yuu namespace as:
+    //      Ayuu.bbox.naming.base = "dialog_window_{%1}";
+    //
+    // Be sure that parent id for each dialog box fits that pattern.
+    // On whatever elements launch a dialog, listen for its `click` event.
+    // That listener can be made as simple as this:
+
+    getId("continue_btn_dialog1")
+     .addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Using shorthand, this reveals `dialog_window_1`
+      Ayuu.bbox.Mount(1, this.id);
+    });
+
+    getId("continue_btn_dialog2")
+     .addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Using shorthand, this reveals `dialog_window_2`
+      Ayuu.bbox.Mount(2, this.id);
+    });
+
+});
+</script>
