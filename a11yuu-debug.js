@@ -14,38 +14,54 @@
 
 (Ayuu.mode==="production") ? Ayuu.DEBUG = false : Ayuu.DEBUG = true;
 
-console.log(Ayuu.meta.name, " - ver. ", Ayuu.version + "\n"); 
+console.log(Ayuu.meta.name, " - ver. ", Ayuu.version + "\n");
+Ayuu.indent         = {};
+Ayuu.meta.precision = 1;          // decimals in timestamp. For super-high precision, use 10, 11, or 12
+Ayuu.meta.prompt    = "    ";     // separator after timestamp
+Ayuu.indent.sm      = "  ";       // whitespace indent for subordinate items
+Ayuu.indent.lg      = "";         // ...will be calculated accordingly
+Ayuu.DOM.t0         = performance.now();
+Ayuu.indent.factor  = 1 + Math.ceil(Ayuu.meta.precision/Ayuu.indent.sm.length) + Math.ceil(Ayuu.meta.prompt.length/Ayuu.indent.sm.length);
+
+for (Ayuu.indent.j=0; Ayuu.indent.j<Ayuu.indent.factor; Ayuu.indent.j++){
+  Ayuu.indent.lg = Ayuu.indent.lg + Ayuu.indent.sm;
+}
 
 Ayuu.Cs = function(reporter, data) {
-  let indent = "  ";
+  const t1 = performance.now();
+  const ts = (t1 - Ayuu.DOM.t0).toFixed(Ayuu.meta.precision) + Ayuu.meta.prompt;
+  const addFactor = Math.ceil(String(parseInt(ts)).length / Ayuu.indent.sm.length);
+  let addIndent = "";
+  for (let k=0; k<addFactor; k++) {  addIndent = addIndent + Ayuu.indent.sm; }
+
   switch (reporter) {
 
   case 10:
-    console.log("⎵", data[0]);
+    console.log(ts+"⎵", data[0]);
     break;
   
   case 50:
-    console.log("⎵ placed at:", data[0]);
+    console.log(ts+"Restoring ⎵ to:", data[0]);
     break;
   
   case 100:
     if (data[0]) {
-      console.log("Basepage scrolling:",data[0]);
+      console.log(ts+"Basepage scrolling:",data[0]);
     } else {
-      console.log("Basepage scrolling:",data[0]," (Strict enforce:",data[1],")\n  scroll policy affects:",data[2]);
+      console.log(ts+"Basepage scrolling:",data[0]," (Strict enforce:",data[1],")\n  scroll policy affects:",data[2]);
     }
     break;
   
   case 120:
-    console.log("focus tracking on:", data[0]);
+    console.log(ts+"focus tracking on:", data[0]);
     break;
   
   case 130:
-    console.log("Focus tracking is authorized to monitor these regions:", data[0]);
+    console.log(ts+"Focus tracking is authorized to monitor these regions:", data[0]);
     break;
 
   case 135:
-    console.log(indent+"✓ tabstops recorded for:", data[0]);
+    console.log(Ayuu.indent.lg+addIndent+"tabstops recorded for:", data[0]);
     break;
 
   case 150:
@@ -53,80 +69,80 @@ Ayuu.Cs = function(reporter, data) {
       let zBefore = Ayuu.atDepth, 
           zAfter  = data[1], 
           reason  = "",
-          ascends  = "█▓▒░░░",
-          descends = "░░▒▓██";
+          gylph   = "█▒▒░░░░",
+          ascends = "░░▒▓▓██";
       console.log("\n");
       if (zAfter === "+1") { zAfter = zBefore + 1;     }
       if (zAfter <= -1)    { zAfter = zBefore + zAfter; }
       if (zAfter > zBefore){ 
         reason = " for  "+ data[2]; 
-        ascends = descends;
+        gylph = ascends;
       }
-      console.log(ascends+" depth", zBefore, "→", zAfter, reason);
+      console.log(gylph+" depth", zBefore, "→", zAfter, reason);
     } else {
-      console.log(" Curr depth: ", JSON.stringify(Ayuu.focus.depth), "\n Last focus: ", Ayuu.focus.prior, "\n");
+      console.log(ts+"Curr depth: ", JSON.stringify(Ayuu.focus.depth), " ·· Last known focus: ", Ayuu.focus.prior, "\n");
     }
     break;
   
   case 160:
-    console.log(indent+"(no longer listening for Esc)");
+    console.log(ts+"(no longer listening for Esc)");
     break;
   
   case 200:
-    console.log("a Webflow-native lightbox will launch from a click on:"); 
-    console.log(indent+ data[1] +"  (thumbnail:", data[2], ")");
+    console.log(ts+"a Webflow-native lightbox will launch from a click on:"); 
+    console.log(Ayuu.indent.lg+addIndent+data[1]+"  (thumbnail:", data[2], ")");
     if (!data[0]) {
-      console.log(indent+"is fixable with alt to", filename, ": ", altx);
+      console.log(Ayuu.indent.lg+addIndent+"is fixable with alt to", filename, ": ", altx);
     } else {
-      console.log(indent+"→ will be fixed with value from [uu-alt-text]");
+      console.log(Ayuu.indent.lg+addIndent+"→ will be fixed with value from [uu-alt-text]");
     }
     break;
   
   case 220:
-    console.log(indent+"fixing webflow lightbox:", data[0]);
+    console.log(ts+"fixing webflow lightbox:", data[0]);
     if (typeof(data[0][2])!=="string" || data[0][2]==="") {
-      console.log(indent+"although alt text was not provided."); 
+      console.log(Ayuu.indent.lg+addIndent+"although alt text was not provided."); 
     }
     break;
   
   case 240:
-    console.log("Lightbox was already closed; catching up.");
+    console.log(ts+"Lightbox was already closed; catching up.");
     break;
 
   case 300:
-    console.log("tip tracker reset: [0,0]");
+    console.log(ts+"tip tracker reset: [0,0]");
     break;
 
   case 310:
-    console.log("⎵ at tip container ",Ayuu.focus.depth[3].toString()); 
+    console.log(ts+"⎵ at tip container ",Ayuu.focus.depth[3].toString()); 
     break;
   
   case 320:
     if (data[0]==1) {
-      console.log(indent+"[→Tab] from container ", Ayuu.focus.depth[3].toString());
+      console.log(ts+Ayuu.indent.sm+"[→Tab] from container ", Ayuu.focus.depth[3].toString());
     } else if (data[0]== -1) {
-      console.log(indent+"[←Shft+Tab] from link ", Ayuu.focus.depth[3].toString()); 
+      console.log(ts+Ayuu.indent.sm+"[←Shft+Tab] from link ", Ayuu.focus.depth[3].toString()); 
     } else if (data[0]==2) {
-      console.log(indent+"[→Tab] from link ", Ayuu.focus.depth[3].toString()); 
+      console.log(ts+Ayuu.indent.sm+"[→Tab] from link ", Ayuu.focus.depth[3].toString()); 
     }
     break;
   
   case 330:
     if (data[0]==2) {
-      console.log("  ⎵ exited the tip");
+      console.log(ts+Ayuu.indent.sm+"⎵ exited the tip");
     } else if (data[0]==1) {
-      console.log("tip revealed");
+      console.log(ts+"tip revealed");
     } else if (data[0]==0) {
-      console.log("tip collapsed");
+      console.log(ts+"tip collapsed");
     }
     break;
   
   case 400:
-    console.log("these Better Boxes are initialized:");
+    console.log(ts+"these Better Boxes are initialized:");
     break;
   
   case 410:
-    console.log(indent, data[0], data[1]);
+    console.log(Ayuu.indent.lg+addIndent, data[0], data[1]);
     break;
   
   case 420:
@@ -134,24 +150,24 @@ Ayuu.Cs = function(reporter, data) {
     break;
   
   case 430:
-    console.log(indent+"Please give", data[0], "an `aria-label`: Having a short name for this dialog box would benefit screenreader users.)");
+    console.log(Ayuu.indent.sm+"Please give", data[0], "an `aria-label`: Having a short name for this dialog box would benefit screenreader users.)");
     break;
   
   case 450:
-    console.log("\nabout to Unmount", data[0], "…");
-    console.log(indent, data[0], " (", data[1],")  was mounted by: ", data[2]," / returning focus to: ", data[2]);
+    console.log("\n"+ts+"about to Unmount", data[0], "…");
+    console.log(Ayuu.indent.lg+addIndent, data[0], " (", data[1],")  was mounted by: ", data[2]," / returning focus to: ", data[2]);
     break;
   
   case 500:
-    console.log("basepage: comparing keypress to available shortcuts"); 
+    console.log(ts+"basepage: comparing keypress to available shortcuts"); 
     break;
   
   case 550:
-    console.log(data[0], ": comparing keypress to numbered tabs 1 to ", data[1]); 
+    console.log(ts+data[0], ": comparing keypress to numbered tabs 1 to ", data[1]); 
     break;
   
   case 590:
-    console.log("✓ enabled high-contrast button: ", data[0]);
+    console.log(ts+"Enabled high-contrast button: ", data[0]);
     break;
 
   case 0:
