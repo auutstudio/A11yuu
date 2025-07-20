@@ -515,12 +515,12 @@ Ayuu.Unhide = function(el){ Ayuu.HideMe(el,"unhide"); };
 
 Ayuu.RestoreFocus = function(id) {
   if (id===null){ id = Ayuu.focus.prior; }
+  if (Ayuu.DEBUG){ Ayuu.Cs(50,[id]) };
   try {
     actUpon(id).focus();
   } catch (e) {
     actUpon(Ayuu.focus.prior).focus();
   }
-  if (Ayuu.DEBUG){ Ayuu.Cs(50,[id]) };
 };
 
 Ayuu.AriaPress = function(el, setstate) {
