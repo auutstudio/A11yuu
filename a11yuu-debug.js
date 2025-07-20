@@ -41,11 +41,11 @@ Ayuu.Cs = function(reporter, data) {
     break;
   
   case 130:
-    console.log("Will scan these regions", data[0], "\nfor tabstops...");
+    console.log("Focus tracking is authorized to monitor these regions:", data[0]);
     break;
 
   case 135:
-    console.log(indent+"region:", data[0]);
+    console.log(indent+"✓ tabstops recorded for:", data[0]);
     break;
 
   case 150:
@@ -151,7 +151,7 @@ Ayuu.Cs = function(reporter, data) {
     break;
   
   case 590:
-    console.log("retrieved Hi-Contrast buttons:", data[0]);
+    console.log("✓ enabled high-contrast button: ", data[0]);
     break;
 
   case 0:

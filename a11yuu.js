@@ -756,7 +756,6 @@ Ayuu.focus.Init = function(arrExceptions) {
         elemsLength, harvestNodes, parentId, extractId;
     
     for (let i=0; i<arrLength; i++) {
-      if (Ayuu.DEBUG){ Ayuu.Cs(135,[arrIds[i]]) }
       parentId = actUpon(arrIds[i]);
       if (parentId) {
         
@@ -772,6 +771,8 @@ Ayuu.focus.Init = function(arrExceptions) {
         if (parentId.getAttribute("tabindex")==="0"||parentId.getAttribute("tabindex")==="-1") {
           focusableIds.push(parentId.getAttribute("id"));
         }
+
+        if (Ayuu.DEBUG){ Ayuu.Cs(135,[arrIds[i]]) }
       }
     }
     elemsLength = arrElems.length;
@@ -1478,12 +1479,12 @@ Ayuu.setTrigger.ActivatesContrast = function () {
       operand;
 
   for (let m=0; m<aimLength; m++) { 
-    if (Ayuu.DEBUG){ Ayuu.Cs(590,[aimed[m]]) }
     operand = actUpon(aimed[m]);
     if (operand) {
       operand.addEventListener("click", function(e) {
         e.preventDefault(); e.stopPropagation(); Ayuu.contrast.High("switch");
       });
+      if (Ayuu.DEBUG){ Ayuu.Cs(590,[aimed[m]]) }
     }
   }
 };
