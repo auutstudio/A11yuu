@@ -211,9 +211,6 @@ Ayuu.DOM.displayNone       = "uu-dont-show";          // classname that sets dis
 Ayuu.DOM.grow              = "uu-grow";               // classname to render a transcript area larger/more prominent
 Ayuu.DOM.unexpand          = "uu-collapse";           // classname to render expandable things in their closed state,
                                                          //   It will be applied alongside `aria-expanded=false`
-Ayuu.fxCC.audioPlayer      = "uu-sfx-player";         // classname of the <audio> element producing a sound to be captioned
-Ayuu.fxCC.container        = "uu-caption-container";  // classname holding the visual captions
-Ayuu.fxCC.inlineBtns       = "uu-caption-btn-hide";   // classname for the button to dismiss soundFX captions
 Ayuu.DOM.lightboxTrigger   = Ayuu.wf.lightbox.trigger;
 Ayuu.DOM.lightboxTriggerJs = Ayuu.wf.lightbox.script;
 Ayuu.DOM.lightboxPane      = Ayuu.wf.lightbox.pane;
@@ -241,6 +238,9 @@ Ayuu.media.pauseBtn        = "div.able-button-handler-play[aria-label='Pause']";
 
 Ayuu.fxCC.modeON           =   "uu-captioned";              // classname on <body> to display SFX captions (via CSS rules)
 Ayuu.fxCC.triggerIO        =   "btn_captions";              // a single id of the button that turns Sound Captions ON/off
+Ayuu.fxCC.audioPlayer      =   "uu-sfx-player";             // classname of the <audio> element producing a sound to be captioned
+Ayuu.fxCC.container        =   "uu-caption-container";      // classname holding the visual captions
+Ayuu.fxCC.inlineBtns       =   "uu-caption-btn-hide";       // classname for the button to dismiss soundFX captions
 Ayuu.TogTips.modeON;      // (no class is utilized here)
 Ayuu.TogTips.modeOFF       =   "uu-hidevocab";              // classname on <body> to suppress all toggle tip trigger buttons
 Ayuu.TogTips.triggerIO     =   "btn_vocab_mode";            // a single id of the button that allows/disallows Toggletips
@@ -1804,7 +1804,8 @@ Ayuu.Extend.listeners.ShortcutsNumberedTabs = function(event) {
   let openModal = String(Ayuu.focus.depth[1]);  //TODO: abstract to a tabbed interface @ depth=2 ?
   let n = parseInt(openModal.slice(-1));
   let finalTab = Ayuu.bbox.dimens[openModal]["tabs"];
-  let aimedId = "";
+  let aimedId = "", 
+  pressedX = String(event.code).charAt(5);
   if (Ayuu.DEBUG){ Ayuu.Cs(550, [openModal,finalTab]) }
   switch(event.code) {
     case "Digit1": 
@@ -1812,7 +1813,6 @@ Ayuu.Extend.listeners.ShortcutsNumberedTabs = function(event) {
     case "Digit3": 
     case "Digit4": 
     case "Digit5":
-      let pressedX = String(event.code).charAt(5);
       if (parseInt(pressedX)>=1 && parseInt(pressedX)<=finalTab) {
         aimedId = parseAs('#', bboxNamed(n))+Ayuu.wf.tablink.suffix+pressedX;
         $(aimedId)[0].click();
