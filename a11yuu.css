@@ -1,4 +1,5 @@
 body:not(.uu-debug) .uu-described,
+body:not(.uu-debug) .uu-definition-handle,
 body:not(.uu-debug) .uu-hierarchy:not(:focus-visible),
 body:not(.uu-debug) .uu-decorative-alt {
   clip: rect(1px, 1px, 1px, 1px);
@@ -48,6 +49,119 @@ body.uu-keyboard {
 body.uu-contrast {
   /* specific to each project */
 }
+
+/* Toggle tip styling */
+.uu-terms,
+.uu-define-me {
+  font-weight: bold;
+}
+.uu-terms { 
+  padding: 0 1px; 
+}
+button[aria-expanded="true"] + div.uu-definition,
+button[aria-expanded="true"] + br + div.uu-definition,
+button[aria-expanded="true"] + br + br + div.uu-definition {
+  display: block;
+}
+button[aria-expanded="false"] + div.uu-definition,
+button[aria-expanded="false"] + br + div.uu-definition,
+button[aria-expanded="false"] + br + br + div.uu-definition {
+  display: none;
+}
+span.uu-terms.active {
+  color: rgba(255,204,85,0.9);
+  background-color: #171717;
+  border-radius: 3px 3px 0 0;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+button.uu-define-me {
+  position: absolute;
+}
+button.uu-define-me[aria-expanded] {
+  /* style the button text */
+  font-size: 1.7em;
+  line-height: 1;
+  color: white;
+  text-align: center;
+
+  /* style the button colors */
+  background-color: #ff0000a6;
+  padding: 0.2em 0.5em;
+  margin-right: 2px;
+  border: 1px solid #ffffffd6;
+  border-radius: 50%;
+  
+  /* adjust the button position */
+  top: -4px;
+  z-index: 2;
+}
+button.uu-define-me[aria-expanded]:focus {
+  border-color: transparent;
+  color: cyan;
+  background-color: #333 !important;
+}
+button.uu-define-me[aria-expanded]:focus-visible,
+button.uu-define-me[aria-expanded][data-wf-focus-visible] {
+  outline-style: dashed;
+  outline-color: #222;
+  outline-width: 2px;
+  outline-offset: 1px;
+  color: cyan;
+  background-color: #333 !important;
+}
+button.uu-define-me[aria-expanded]:hover {
+  border-color: white;
+  background-color: red !important;
+}
+button.uu-define-me[aria-expanded="true"],
+button.uu-define-me[aria-expanded="true"]:focus,
+button.uu-define-me[aria-expanded="true"]:focus-visible,
+button.uu-define-me[aria-expanded="true"][data-wf-focus-visible] {
+  background-color: #222 !important;
+  color: aquamarine;
+  z-index: 3;
+  font-weight: normal;
+  box-shadow: 3px 0 6px 4px #ffffff;
+}
+.uu-definition {
+  right: auto; 
+  bottom: auto;
+  border: 1px solid #666;
+  border-radius: 6px;
+  min-height: 55px;
+  max-height: 200px;
+  background-color: #171717;
+  color: #f0f0f0;
+  box-shadow: 0 0 9px 0 #fc5, inset 0 -2px 4px -2px #f1f1f1;
+  padding: 18px 24px 26px 18px;
+  position: absolute;
+  width: 100%;
+  max-width: 40vw;
+  margin-left: 30px;
+  overflow: auto;
+  z-index: 3;
+}
+.uu-definition a {
+  color: #d3d3d3;
+  text-decoration: none;
+  border-bottom: 1px dotted #d3d3d3;
+  margin-left: 8px;
+}
+.uu-definition p {
+  font-family: 'PT Sans', sans-serif;
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 20px;
+}
+body.uu-hidevocab .uu-terms {
+  font-weight: normal;
+}
+body.uu-hidevocab button.uu-define-me {
+    display: none;
+}
+
+/* Bonus: make visible when debugging */
 body.uu-debug .uu-described,
 body.uu-debug .uu-hierarchy,
 body.uu-debug .uu-decorative-alt { 

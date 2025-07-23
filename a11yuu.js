@@ -247,6 +247,7 @@ Ayuu.TogTips.triggerIO     =   "btn_vocab_mode";            // a single id of th
 Ayuu.TogTips.kwClass       =   "uu-terms";
 Ayuu.TogTips.btnClass      =   "uu-define-me";
 Ayuu.TogTips.containerClass=   "uu-definition";
+Ayuu.TogTips.containerLabel=   "uu-definition-handle";
 Ayuu.contrast.modeON       =   "uu-contrast";               // classname on <body> to render hi-Contrast CSS styling
 Ayuu.contrast.triggersIO   = [ "btn_contrast_mode" ];       // Array:  id(s) of all buttons that toggle Hi-Contrast mode ON/off
 Ayuu.kbshort.modeON        =   "uu-kbshorts";               // classname on <body> for visual changes when shortcuts are ON
