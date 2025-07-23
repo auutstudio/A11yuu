@@ -24,10 +24,11 @@ Ayuu.renderMs  = 400;             // ms to wait, for times when browser renderin
 /* -------------------------------------------------- */
 /* Some shorthand functions                           */
 
-const uuMs     = Ayuu.renderMs;
-const uuSlow   = 2.25 * Ayuu.renderMs;
-const uuFast   = 0.75 * Ayuu.renderMs;
-const uuVF     = 0.5  * Ayuu.renderMs;
+const uuMs     = Ayuu.renderMs; // default: 400ms
+const uuSlow   = 2.25 * Ayuu.renderMs;   // 900ms
+const uuFast   = 0.75 * Ayuu.renderMs;   // 300ms
+const uuVF     = 0.5  * Ayuu.renderMs;   // 200ms
+const uuXVF    = 0.25 * Ayuu.renderMs;   // 100ms
 
 const getBody  = function() { 
   return document.getElementsByTagName("body")[0]; 
@@ -120,7 +121,6 @@ Ayuu.meta.license  = { "name": "MIT License",
                        "url":  "https://github.com/auutstudio/a11yuu" };
 Ayuu.Helper        = {};
 Ayuu.DOM           = {};
-Ayuu.body          = getBody();
 Ayuu.media         = {};
 Ayuu.bbox          = {};
 Ayuu.bbox.dimens   = {};
@@ -336,6 +336,7 @@ window.onunhandledrejection = event => {
 /* Helper Functions:                                  */
 
 Ayuu.Helper.Sensors = function() {
+  let domBody = getBody();
   if (window.innerWidth <= Ayuu.mobileWH[0]) { 
     Ayuu.sensed.Portrait = true; 
     if (window.innerHeight >= Ayuu.mobileWH[2]) {
@@ -346,12 +347,15 @@ Ayuu.Helper.Sensors = function() {
     && window.innerHeight <= Ayuu.mobileWH[0] ) { 
     Ayuu.sensed.Landscape = true;
   }
-  Ayuu.body.addEventListener( "mouseenter", Ayuu.Helper.LogMouse );
+  domBody.addEventListener( "mouseenter", Ayuu.Helper.LogMouse );
 };
 
 Ayuu.Helper.LogMouse = function() {
   if (!Ayuu.sensed.mouse) { Ayuu.sensed.mouse = true; }
-  else { Ayuu.body.removeEventListener( "mouseenter", Ayuu.Helper.LogMouse ); }
+  else { 
+    let domBody = getBody();
+    domBody.removeEventListener( "mouseenter", Ayuu.Helper.LogMouse ); 
+  }
   if (Ayuu.DEBUG){ console.log('mouse detected'); }
 };
 
@@ -489,7 +493,7 @@ Ayuu.HideMe = function(el, action) {
       // Better Boxes require an add’l class for full opacity:
       let delayFadeIn = setTimeout(function() { 
         operand.classList.add(Ayuu.bbox.class.reveal); 
-      }, 200);
+      }, uuVF);
     }
   } else { 
 
@@ -499,7 +503,7 @@ Ayuu.HideMe = function(el, action) {
       operand.classList.remove(Ayuu.bbox.class.reveal);
       let delayHideMe = setTimeout(function() { 
         operand.classList.add(Ayuu.DOM.displayNone); 
-      }, 400);
+      }, uuMs);
     } else {
       operand.classList.add(Ayuu.DOM.displayNone);
     }
@@ -983,23 +987,24 @@ Ayuu.TogTips.Enabled = function(setstate) {
   // `setstate` accepts:  true, false, "switch"
   // If no parameter is given, it defaults to `false`
 
-  let trigger = getId(Ayuu.TogTips.triggerIO);
+  let trigger = getId(Ayuu.TogTips.triggerIO),
+      domBody = getBody();
   if (setstate==="switch"){
-    if (Ayuu.body.classList.contains(Ayuu.TogTips.modeOFF)) {
-      Ayuu.body.classList.remove(Ayuu.TogTips.modeOFF); 
+    if (domBody.classList.contains(Ayuu.TogTips.modeOFF)) {
+      domBody.classList.remove(Ayuu.TogTips.modeOFF); 
       Ayuu.AriaPress(trigger,"press"); 
       return;
     } else {
-      Ayuu.body.classList.add(Ayuu.TogTips.modeOFF); 
+      domBody.classList.add(Ayuu.TogTips.modeOFF); 
       Ayuu.AriaPress(trigger,"unpress"); 
       return;
     }
   } else if (setstate===true) {
-    Ayuu.body.classList.remove(Ayuu.TogTips.modeOFF); 
+    domBody.classList.remove(Ayuu.TogTips.modeOFF); 
     Ayuu.AriaPress(trigger,"press"); 
     return;
   } else {
-    Ayuu.body.classList.add(Ayuu.TogTips.modeOFF); 
+    domBody.classList.add(Ayuu.TogTips.modeOFF); 
     Ayuu.AriaPress(trigger,"unpress"); 
     return;
   }
@@ -1022,6 +1027,8 @@ Ayuu.TogTips.Init = function () {
       ttTermsLength,
       ttWrappers = getClass(Ayuu.TogTips.containerClass),
       ttWrapsLength,
+      ttActionBtns = getClass(Ayuu.TogTips.btnClass),
+      ttBtnsLength,
       tInnerLinks,
       ttLinksLength;
 
@@ -1036,7 +1043,11 @@ Ayuu.TogTips.Init = function () {
       }
     });
   }
-  // TODO: iterate to add 'onclick' to each trigger btn
+  // iterate to empower each trigger btn to open its content
+  ttBtnsLength = ttActionBtns.length;
+  for (let i=0; i<ttBtnsLength; i++) { 
+    ttActionBtns[i].setAttribute("onclick","Ayuu.ToggleMe(this.id)");
+  }
 
   ttWrapsLength = ttWrappers.length;
   for (let i=0; i<ttWrapsLength; i++) {
@@ -1219,15 +1230,16 @@ Ayuu.setTrigger.ActivatesCaptions = function () {
 Ayuu.fxCC.Show = function(setstate) {
   let mainTrigger = actUpon(Ayuu.fxCC.triggerIO),
       aimed = getClass(Ayuu.fxCC.container),
+      domBody = getBody(),
       aimLength = aimed.length,
       pausedState = getClass(Ayuu.fxCC.audioPlayer)[0].paused;
 
   if (setstate==="query") {
-    if (Ayuu.body.classList.contains(Ayuu.fxCC.modeON)) { 
+    if (domBody.classList.contains(Ayuu.fxCC.modeON)) { 
       return true; 
     } else { return false; }
   } else if (setstate==="switch") {
-    if (Ayuu.body.classList.contains(Ayuu.fxCC.modeON)) { 
+    if (domBody.classList.contains(Ayuu.fxCC.modeON)) { 
       manageHiddenStates(); return; 
     } else { manageShownStates(); return; }
   } else if (setstate===false) {
@@ -1240,12 +1252,12 @@ Ayuu.fxCC.Show = function(setstate) {
       aimed[i].classList.add(Ayuu.DOM.displayNone);
     }
     setTimeout(function() {
-      Ayuu.body.classList.remove(Ayuu.fxCC.modeON); 
+      domBody.classList.remove(Ayuu.fxCC.modeON); 
       Ayuu.AriaPress(mainTrigger,"unpress");
     }, uuFast);
   }
   function manageShownStates() {
-    Ayuu.body.classList.add(Ayuu.fxCC.modeON);
+    domBody.classList.add(Ayuu.fxCC.modeON);
     Ayuu.AriaPress(mainTrigger,"press");
     if(!pausedState) {
       for (let i=0; i<aimLength; i++) {
@@ -1325,8 +1337,9 @@ Ayuu.kbshort.Show = function(setstate, elInvoked, elShow, elFocus) {
   //     Any other `div.uu-assist-section` on the page will be revealed at the end of the process (as being less urgent).
   // `elFocus` (optional): a specific id to set the cursor focus to subsequently, overriding the normal target.
 
+  let domBody = getBody();
   if (setstate==="query") {
-    if ( Ayuu.body.classList.contains(Ayuu.kbshort.modeON)
+    if ( domBody.classList.contains(Ayuu.kbshort.modeON)
       && Ayuu.log.kbshort.enabled) { 
       return true; 
     } else { 
@@ -1379,7 +1392,7 @@ Ayuu.kbshort.Show = function(setstate, elInvoked, elShow, elFocus) {
             Ayuu.ScrollTo(elFocus);
             elFocus.focus();
           }
-        }, 100);
+        }, uuXVF);
 
         // Urgent: first, hide the instigating element
         Ayuu.Hide(elInvoked);
@@ -1419,8 +1432,8 @@ Ayuu.kbshort.Show = function(setstate, elInvoked, elShow, elFocus) {
     let countCtrls = controllers.length;
     // make active:
     if (newstate) {
-      Ayuu.body.classList.remove(Ayuu.kbshort.modeOFF);
-      Ayuu.body.classList.add(Ayuu.kbshort.modeON);
+      domBody.classList.remove(Ayuu.kbshort.modeOFF);
+      domBody.classList.add(Ayuu.kbshort.modeON);
 
       for (let m=0; m<countCtrls; m++) {
         Ayuu.AriaPress( getId(controllers[m]), "press"); 
@@ -1429,8 +1442,8 @@ Ayuu.kbshort.Show = function(setstate, elInvoked, elShow, elFocus) {
       Ayuu.log.kbshort.enabled = true;
     } // make inactive:
       else if (newstate===false) {
-      Ayuu.body.classList.remove(Ayuu.kbshort.modeON);
-      Ayuu.body.classList.add(Ayuu.kbshort.modeOFF);
+      domBody.classList.remove(Ayuu.kbshort.modeON);
+      domBody.classList.add(Ayuu.kbshort.modeOFF);
       for (let m=0; m<countCtrls; m++) {
         Ayuu.AriaPress( getId(controllers[m]), "unpress"); 
       }
@@ -1496,13 +1509,14 @@ Ayuu.contrast.High = function(setstate) {
   //       "switch"
   //       "query"  → returns the current state but takes no action.
   
+  let domBody = getBody();
   if (setstate==="query") {
-    if (Ayuu.body.classList.contains(Ayuu.contrast.modeON)) { 
+    if (domBody.classList.contains(Ayuu.contrast.modeON)) { 
       return true;
     } else { return false; }
 
   } else if (setstate==="switch") {
-    if (Ayuu.body.classList.contains(Ayuu.contrast.modeON)) {
+    if (domBody.classList.contains(Ayuu.contrast.modeON)) {
       useHiContrast(false); 
       return;
     } else { useHiContrast(true); return;}
@@ -1519,11 +1533,11 @@ Ayuu.contrast.High = function(setstate) {
     let countTriggers = Ayuu.contrast.triggersIO.length,
         operand, directive, colloquial;
     if (newstate) {
-      Ayuu.body.classList.add(Ayuu.contrast.modeON);
+      domBody.classList.add(Ayuu.contrast.modeON);
       directive = "press";
       colloquial = "on";
     } else {
-      Ayuu.body.classList.remove(Ayuu.contrast.modeON);
+      domBody.classList.remove(Ayuu.contrast.modeON);
       directive = "unpress";
       colloquial = "off";
     }
