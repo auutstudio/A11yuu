@@ -413,26 +413,33 @@ Ayuu.Helper.SimulateClick = function(obj) {
 };
 
 Ayuu.Helper.generateUniqueId = function(input) {  // expects: String
-// Assembles a pseudo-random id for an element, derived from the quirks of which
-// characters happen to fall, when taking odd & irregular excerpts from a stringified
-// version of its outerHMTL and warping the sample based on the now() timestamp.
-//   Example of an output:  "a_generated_822_556_1107_265"
+// Assembles an id for an element without one, which remains stable across page loads. It attempts to be 
+// unique, derived from the quirks of which characters happen to fall when taking odd/irregular excerpts 
+// from a stringified copy of its outerHMTL.
+//   Example of an output:  "a_gen_822_556_1107_10"
+//
+// NOTE: this will result in duplicated ids if any two elements are pure twins (such as multiple links
+// for <a href="#top>Back to top</a>). This could cause unintended behavior on a RestoreFocus(id).
+// Use Ayuu.DEBUG to be notified if this has occurred, so you can set your own id in the HTML.
 
+  input = String(input);
   let pieces = input.split(" "),
+      sampling = input.slice(-9,-8),
       pieceCount = pieces.length,
-      barcode = [];
+      barcode = [],
+      suffix;
+
+  if (sampling==="<"||sampling===" ") { sampling = input.slice(-11,-10); }
+  suffix = input.split(sampling).length - 1;
 
   function itsLength(x) { return String(x).length; }
+
   function summifyChars(snippet) {
     let nchars = snippet.length, summ = 0;
     for (let v=0; v<nchars; v++) {
-      let seed = parseInt(performance.now().toFixed(13).slice(-5,-1));
-      if ( seed%3 == 0 ) {
-        if (v%2 == 0) { summ = summ + snippet.charCodeAt(v); }
-      } else {
-        summ = summ + snippet.charCodeAt(v);
-      }
+      summ = summ + snippet.charCodeAt(v);
     }
+    summ = summ + nchars;
     return summ.toString();
   }
 
@@ -440,19 +447,19 @@ Ayuu.Helper.generateUniqueId = function(input) {  // expects: String
     blockLen = itsLength(pieces[r]);
 
     if (r==0) {
-      barcode.push(pieces[r].substring(1,2)+"_generated_");
+      barcode.push(pieces[r].substring(1,2)+"_gen_");
     } else {
       if ( pieces[r].substring(0,3)==="xml"      // (likely true) as input was passed thru XMLserializer
         || pieces[r].substring(0,3)==="ari"      // aria
         || pieces[r].substring(0,3)==="tab"      // tabindex
         || pieces[r].substring(0,3)==="tar" ) {  // target
-            //none of those are reliablely unique.
+            //these are likely to have the same value, esp. among siblings
       } else {
         if (pieces[r].substring(0,4)==="href"||pieces[r].substring(0,4)==="data" ) {
-          if (blockLen > 15) {
-            barcode.push(summifyChars(pieces[r].substring(15,27)));
+          if (blockLen > 18) {
+            barcode.push(summifyChars(pieces[r].slice(-12)));
           } else {
-            barcode.push(summifyChars(pieces[r].slice(-10)));
+            barcode.push(summifyChars(pieces[r].slice(-6)));
           }
         } else if (pieces[r].substring(0,4)==="clas") { 
           if (blockLen > 8) {
@@ -465,7 +472,7 @@ Ayuu.Helper.generateUniqueId = function(input) {  // expects: String
       }
     }
   }
-  barcode.push("_"+summifyChars(performance.now().toFixed(13).slice(-5)) );
+  barcode.push("_"+suffix);
   return barcode.join("");
 };
 
@@ -793,11 +800,12 @@ Ayuu.JotFocus = function(id) {  // Log `id` as having the last-known cursor focu
 
 Ayuu.focus.Init = function(arrExceptions) {
   // arrExceptions (optional) accepts:  [array of ids] that you wish to exclude; 
-  // as you will handle awareness of their focus in a custom manner.
+  // e.g. you want to handle its focus in another custom process.
 
   let operands = getFocusableIds(Ayuu.focus.nodes),
       operandCount,
-      excludeCount;
+      excludeCount,
+      t0 = performance.now(), trt;
 
   if (Array.isArray(arrExceptions)) {
     excludeCount = arrExceptions.length;
@@ -812,7 +820,8 @@ Ayuu.focus.Init = function(arrExceptions) {
   for (let i=0; i<operandCount; i++) { 
     getId( operands[i] ).setAttribute("onfocus","Ayuu.JotFocus(this.id)");
   }
-
+  if (Ayuu.DEBUG){ trt=(performance.now()-t0)/1000; console.log("focus.Init finished in",trt); }
+  
   function getFocusableIds(regionIds) {
     // `regionIds`: an array of parent ids whose children will be tracked for keyboard focus
     // TODO: dont require that they have been given ids
@@ -821,11 +830,12 @@ Ayuu.focus.Init = function(arrExceptions) {
     const xmlifier  = new XMLSerializer();
     let regionCount = regionIds.length,
         inventory      = [],
-        queryResult,
         finalSKUs      = [],
+        queryResult,
         thisRegion,
         countItems,
         uniqueItems,
+        duplicateIds,
         readSKU,
         newSKU;
     
@@ -854,28 +864,38 @@ Ayuu.focus.Init = function(arrExceptions) {
         }
         if (Ayuu.DEBUG){ Ayuu.Cs(135,[regionIds[i]]) }
 
-      } //end (thisRegion=true)
-    } //end single iteration on regions
+      } //endif thisRegion=true
+    } //end one single region
 
-    uniqueItems = inventory.filter((value, index, array) => array.indexOf(value) === index);
+    uniqueItems = inventory.filter((value,index,array) => array.indexOf(value)===index);
     countItems = uniqueItems.length;
 
+    // loop: extract ids
     for (let j=0; j<countItems; j++) { 
       readSKU = uniqueItems[j].getAttribute("id");
 
       if (!readSKU) {  // Generate an id if there is none
         newSKU = Ayuu.Helper.generateUniqueId(xmlifier.serializeToString(uniqueItems[j]));
         readSKU = newSKU;
-        actUpon(uniqueItems[j]).setAttribute("id", newSKU);
+        (uniqueItems[j]).setAttribute("id", newSKU);
       }
 
       finalSKUs.push(readSKU);
-    } //end loop through inventory elements
-    inventory = [];
+    } //end loop: extract
+    
+    inventory = [];   // clean up working arrays
     queryResult = [];
+    uniqueItems = [];
+    countItems = 0;
+
+    if (Ayuu.DEBUG){
+      duplicateIds = finalSKUs.filter((item, index) => finalSKUs.indexOf(item)!==index);
+      countItems = duplicateIds.length;
+      if (countItems>0) { Ayuu.Cs(140,[duplicateIds]) }
+    }
 
     return finalSKUs;
-  };
+  }; //end getFocusableIds
 };
 
 Ayuu.ChangeLayer = function(newdepth, id) {
