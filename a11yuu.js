@@ -205,6 +205,7 @@ function bboxNamed(x) {
 
 /**    EXPECTED DOM NAMING PATTERNS     **/
 
+Ayuu.DOM.cursorable        = "select, input, textarea, button, a"; // comma-sep list of tags you expect to receive the user's cursor
 Ayuu.DOM.scaffolds         = "uu-hierarchy uu-white-text";
 Ayuu.DOM.nonvisible        = "uu-visib-hidden";       // classname that sets visibility: hidden
 Ayuu.DOM.displayNone       = "uu-dont-show";          // classname that sets display: none
@@ -409,6 +410,63 @@ Ayuu.Helper.SimulateClick = function(obj) {
   } else if (typeof(obj)==='object') {
     obj.dispatchEvent(uuUiEvent);
   }
+};
+
+Ayuu.Helper.generateUniqueId = function(input) {  // expects: String
+// Assembles a pseudo-random id for an element, derived from the quirks of which
+// characters happen to fall, when taking odd & irregular excerpts from a stringified
+// version of its outerHMTL and warping the sample based on the now() timestamp.
+//   Example of an output:  "a_generated_822_556_1107_265"
+
+  let pieces = input.split(" "),
+      pieceCount = pieces.length,
+      barcode = [];
+
+  function itsLength(x) { return String(x).length; }
+  function summifyChars(snippet) {
+    let nchars = snippet.length, summ = 0;
+    for (let v=0; v<nchars; v++) {
+      let seed = parseInt(performance.now().toFixed(13).slice(-5,-1));
+      if ( seed%3 == 0 ) {
+        if (v%2 == 0) { summ = summ + snippet.charCodeAt(v); }
+      } else {
+        summ = summ + snippet.charCodeAt(v);
+      }
+    }
+    return summ.toString();
+  }
+
+  for (let r=0; r<pieceCount; r++) {
+    blockLen = itsLength(pieces[r]);
+
+    if (r==0) {
+      barcode.push(pieces[r].substring(1,2)+"_generated_");
+    } else {
+      if ( pieces[r].substring(0,3)==="xml"      // (likely true) as input was passed thru XMLserializer
+        || pieces[r].substring(0,3)==="ari"      // aria
+        || pieces[r].substring(0,3)==="tab"      // tabindex
+        || pieces[r].substring(0,3)==="tar" ) {  // target
+            //none of those are reliablely unique.
+      } else {
+        if (pieces[r].substring(0,4)==="href"||pieces[r].substring(0,4)==="data" ) {
+          if (blockLen > 15) {
+            barcode.push(summifyChars(pieces[r].substring(15,27)));
+          } else {
+            barcode.push(summifyChars(pieces[r].slice(-10)));
+          }
+        } else if (pieces[r].substring(0,4)==="clas") { 
+          if (blockLen > 8) {
+            barcode.push(summifyChars(pieces[r].slice(-10)));
+          }
+        } else {
+          barcode.push("_"+summifyChars( pieces[r].slice(-10)+String(r)+pieces[r].slice(-1*r) ));
+        }
+        if (barcode.length>=4) { break; }
+      }
+    }
+  }
+  barcode.push("_"+summifyChars(performance.now().toFixed(13).slice(-5)) );
+  return barcode.join("");
 };
 
 Ayuu.Helper.PauseAllMedia = function(el) {  //expected: STRING
@@ -632,7 +690,7 @@ Ayuu.UnderScrolling = function(newstate, arrIds, policy) {
   //   TO BE IMPROVED: https://www.geeksforgeeks.org/how-to-disable-scrolling-temporarily-using-javascript/
   //
 
-  let arrLength = arrIds.length,
+  let fenceCount = arrIds.length,
       operand, beStrict;
 
   if (policy!=="lax") { beStrict=true; } else { beStrict=false; }
@@ -642,14 +700,14 @@ Ayuu.UnderScrolling = function(newstate, arrIds, policy) {
   if (Ayuu.DEBUG){ Ayuu.Cs(100,[newstate,beStrict,arrIds]) }
 
   if (newstate===false) {
-    for (let i=0; i<arrLength; i++){
+    for (let i=0; i<fenceCount; i++){
       operand = getId(arrIds[i]);
       operand.setAttribute("aria-hidden","true");
       if (!Ayuu.sensed.mouse||beStrict) { operand.classList.add(Ayuu.DOM.nonvisible); }
     }
     if (!beStrict) { rootOverflow("hidden"); }
   } else {
-    for (let i=0; i<arrLength; i++){
+    for (let i=0; i<fenceCount; i++){
       operand = getId(arrIds[i]);
       operand.removeAttribute("aria-hidden");
       operand.classList.remove(Ayuu.DOM.nonvisible);
@@ -734,59 +792,89 @@ Ayuu.JotFocus = function(id) {  // Log `id` as having the last-known cursor focu
 }
 
 Ayuu.focus.Init = function(arrExceptions) {
+  // arrExceptions (optional) accepts:  [array of ids] that you wish to exclude; 
+  // as you will handle awareness of their focus in a custom manner.
+
   let operands = getFocusableIds(Ayuu.focus.nodes),
-      operandsLength, arrLength;
+      operandCount,
+      excludeCount;
+
   if (Array.isArray(arrExceptions)) {
-    arrLength = arrExceptions.length;
-    for (let j=0; j<arrLength; j++) { 
+    excludeCount = arrExceptions.length;
+    for (let j=0; j<excludeCount; j++) { 
       operands = Ayuu.Helper.RemoveFromArray(operands, arrExceptions[j]);
     }
   } else if (typeof(arrExceptions)==="string") {
     operands = Ayuu.Helper.RemoveFromArray(operands, arrExceptions);
   }
   if (Ayuu.DEBUG){ Ayuu.Cs(120,[operands]) }
-  operandsLength = operands.length;
-  for (let i=0; i<operandsLength; i++) { 
+  operandCount = operands.length;
+  for (let i=0; i<operandCount; i++) { 
     getId( operands[i] ).setAttribute("onfocus","Ayuu.JotFocus(this.id)");
   }
 
-  function getFocusableIds(arrIds) { 
-    // `arrIds`: an array of parent ids whose children will be tracked for keyboard focus
+  function getFocusableIds(regionIds) {
+    // `regionIds`: an array of parent ids whose children will be tracked for keyboard focus
     // TODO: dont require that they have been given ids
 
-    if (Ayuu.DEBUG){ Ayuu.Cs(130,[arrIds]) }
-    let arrLength    = arrIds.length,
-        arrElems     = [],
-        focusableIds = [],
-        elemsLength, harvestNodes, parentId, extractId;
+    if (Ayuu.DEBUG){ Ayuu.Cs(130,[regionIds]) }
+    const xmlifier  = new XMLSerializer();
+    let regionCount = regionIds.length,
+        inventory      = [],
+        queryResult,
+        finalSKUs      = [],
+        thisRegion,
+        countItems,
+        uniqueItems,
+        readSKU,
+        newSKU;
     
-    for (let i=0; i<arrLength; i++) {
-      parentId = actUpon(arrIds[i]);
-      if (parentId) {
-        
-        // scan for elements w tabindex 0:
-        harvestNodes = parentId.querySelectorAll("[id][tabindex='0']");
-        arrElems = arrElems.concat(Array.prototype.slice.call(harvestNodes));
-        
-        // scan for elements w tabindex -1:
-        harvestNodes = parentId.querySelectorAll("[id][tabindex='-1']");
-        arrElems = arrElems.concat(Array.prototype.slice.call(harvestNodes));
+    for (let i=0; i<regionCount; i++) {
+      thisRegion = actUpon(regionIds[i]);
 
-        // be sure to include parents nodes themselves
-        if (parentId.getAttribute("tabindex")==="0"||parentId.getAttribute("tabindex")==="-1") {
-          focusableIds.push(parentId.getAttribute("id"));
+      if (thisRegion) {
+        // scan for expected affordances, convert to an array & add to inventory:
+        queryResult  = thisRegion.querySelectorAll(Ayuu.DOM.cursorable);
+        inventory    = inventory.concat( Array.prototype.slice.call(queryResult) );
+
+        // scan for elements w tabindex 0, convert to an array & add to inventory:
+        queryResult = thisRegion.querySelectorAll("[tabindex='0']");
+        inventory   = inventory.concat( Array.prototype.slice.call(queryResult) );
+
+        // scan for elements w tabindex -1, convert to an array & add to inventory:
+        queryResult = thisRegion.querySelectorAll("[tabindex='-1']");
+        inventory   = inventory.concat( Array.prototype.slice.call(queryResult) );
+
+        // be sure to include parents nodes themselves (which do have an id, if they're here)
+        if ( thisRegion.getAttribute("tabindex")==="0"
+          || thisRegion.getAttribute("tabindex")==="-1"
+          || thisRegion.tagName==="BUTTON"
+          || thisRegion.tagName==="A" ) {
+          finalSKUs.push(thisRegion.getAttribute("id"));   // since id is known, push directly to final ouput
         }
+        if (Ayuu.DEBUG){ Ayuu.Cs(135,[regionIds[i]]) }
 
-        if (Ayuu.DEBUG){ Ayuu.Cs(135,[arrIds[i]]) }
+      } //end (thisRegion=true)
+    } //end single iteration on regions
+
+    uniqueItems = inventory.filter((value, index, array) => array.indexOf(value) === index);
+    countItems = uniqueItems.length;
+
+    for (let j=0; j<countItems; j++) { 
+      readSKU = uniqueItems[j].getAttribute("id");
+
+      if (!readSKU) {  // Generate an id if there is none
+        newSKU = Ayuu.Helper.generateUniqueId(xmlifier.serializeToString(uniqueItems[j]));
+        readSKU = newSKU;
+        actUpon(uniqueItems[j]).setAttribute("id", newSKU);
       }
-    }
-    elemsLength = arrElems.length;
-    for (let j=0; j<elemsLength; j++) { 
-      extractId = arrElems[j].getAttribute("id");
-      //TODO: if it doesnt have an id, generate one.
-      focusableIds.push(extractId); 
-    }
-    return focusableIds; 
+
+      finalSKUs.push(readSKU);
+    } //end loop through inventory elements
+    inventory = [];
+    queryResult = [];
+
+    return finalSKUs;
   };
 };
 
@@ -1025,17 +1113,17 @@ Ayuu.TogTips.HasLeft = function() {
 
 Ayuu.TogTips.Init = function () {
   let ttTerms = getClass(Ayuu.TogTips.kwClass),
-      ttTermsLength,
+      countTerms,
       ttWrappers = getClass(Ayuu.TogTips.containerClass),
-      ttWrapsLength,
+      countTips,
       ttActionBtns = getClass(Ayuu.TogTips.btnClass),
-      ttBtnsLength,
-      tInnerLinks,
-      ttLinksLength;
+      countBtns,
+      childLinks,
+      countItsLinks;
 
   // clicking directly on a keyword (the word, not its button) should close any open toggles:
-  ttTermsLength = ttTerms.length;
-  for (let i=0; i<ttTermsLength; i++) {
+  countTerms = ttTerms.length;
+  for (let i=0; i<countTerms; i++) {
     ttTerms[i].addEventListener("mouseup", function(){
       if (Ayuu.focus.depth[2]==="term") {
         Ayuu.TogTips.CollapseAll();
@@ -1045,13 +1133,13 @@ Ayuu.TogTips.Init = function () {
     });
   }
   // iterate to empower each trigger btn to open its content
-  ttBtnsLength = ttActionBtns.length;
-  for (let i=0; i<ttBtnsLength; i++) { 
+  countBtns = ttActionBtns.length;
+  for (let i=0; i<countBtns; i++) { 
     ttActionBtns[i].setAttribute("onclick","Ayuu.ToggleMe(this.id)");
   }
 
-  ttWrapsLength = ttWrappers.length;
-  for (let i=0; i<ttWrapsLength; i++) {
+  countTips = ttWrappers.length;
+  for (let i=0; i<countTips; i++) {
 
     ttWrappers[i].addEventListener("focus", function() {
       let unSuspend;
@@ -1086,11 +1174,11 @@ Ayuu.TogTips.Init = function () {
       }
     });
 
-    tInnerLinks = ttWrappers[i].getElementsByTagName("A");
-    ttLinksLength = tInnerLinks.length;
-    for (let h=0; h<ttLinksLength; h++) {
+    childLinks = ttWrappers[i].getElementsByTagName("A");
+    countItsLinks = childLinks.length;
+    for (let h=0; h<countItsLinks; h++) {
 
-      tInnerLinks[h].addEventListener("keydown", function() {
+      childLinks[h].addEventListener("keydown", function() {
         let unSuspend;
         if (!Ayuu.focus.suspend) {
           if (event.shiftKey && event.code == "Tab") {
@@ -1278,9 +1366,9 @@ Ayuu.setTrigger.ActivatesShortcuts = function() {
   let arrA = Ayuu.kbshort.triggers.passive,
       arrB = Ayuu.kbshort.triggers.direct,
       arrControls = arrA.concat(arrB),
-      arrLength = arrControls.length,
+      ctrlCount = arrControls.length,
       operand;
-  for (let m=0; m<arrLength; m++) { 
+  for (let m=0; m<ctrlCount; m++) { 
     operand = actUpon(arrControls[m]);
     if (operand) {
       operand.addEventListener("click", function(e) {
@@ -1356,7 +1444,7 @@ Ayuu.kbshort.Show = function(setstate, elInvoked, elShow, elFocus) {
     let arrayA = Ayuu.kbshort.triggers.passive,
         arrayB = Ayuu.kbshort.triggers.direct,
         arrControls = arrayA.concat(arrayB),
-        arrLength = arrControls.length,
+        ctrlCount = arrControls.length,
         rewriteAria = "",
         invoked, otherCues, headingId, headingEl, voicedId, j;
 
@@ -1413,7 +1501,7 @@ Ayuu.kbshort.Show = function(setstate, elInvoked, elShow, elFocus) {
           }
         }
         // Less urgent: hide any other controllers
-        for (let m=0; m<arrLength; m++) {
+        for (let m=0; m<ctrlCount; m++) {
           if (arrControls[m]!==elInvoked.getAttribute("id")) {
             Ayuu.Hide(arrControls[m]);
           }
@@ -1673,7 +1761,7 @@ Ayuu.bbox.Mount = function(n, instigator) {
       // If has ("div.w-tabs") and is :last-child,  then scan each ("div.w-tab-pane") for [tabindex="0"], [tabindex="-1"],
       //    listen for keydown on *each* tab pane’s last tabbable.
 
-      queryElements = thisBbox.querySelectorAll("select, input, textarea, button, a");
+      queryElements = thisBbox.querySelectorAll(Ayuu.DOM.cursorable);
       queryElements.item([queryElements.length-1]);  // the last one in DOM order
 
       // But if ("div.w-tabs") has a subsequent sibling, then scan through its last sibling for that one’s lastTab,
