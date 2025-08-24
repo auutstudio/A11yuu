@@ -62,7 +62,7 @@ const actUpon  = function(obj) {
     if (s==="#") { id=obj.slice(1); } else { id=obj; }
     if (document.getElementById(id)===null) {
       if (Ayuu.DEBUG){
-        console.log( "WARNING: Requested to actUpon ‘"+id+"’, but it doesn’t exist." );
+        console.log( "▓░░ WARNING: ░░▓  Requested to actUpon ‘"+id+"’, but it doesnt exist." );
       }
       return false;
     } else {
@@ -820,7 +820,7 @@ Ayuu.focus.Init = function(arrExceptions) {
   for (let i=0; i<operandCount; i++) { 
     getId( operands[i] ).setAttribute("onfocus","Ayuu.JotFocus(this.id)");
   }
-  if (Ayuu.DEBUG){ trt=(performance.now()-t0)/1000; console.log("focus.Init finished in",trt); }
+  if (Ayuu.DEBUG){ trt=(performance.now()-t0)/1000; console.log("focus.Init finished in",trt,"\n\n"); }
   
   function getFocusableIds(regionIds) {
     // `regionIds`: an array of parent ids whose children will be tracked for keyboard focus
