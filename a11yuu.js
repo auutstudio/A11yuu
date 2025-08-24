@@ -15,7 +15,7 @@
 /* High Priority variables                            */
 
 window.Ayuu || ( window.Ayuu = {} );
-Ayuu.version   = "0.9";
+Ayuu.version   = "0.9.1";
 Ayuu.mode      = "";              // use "production" to trap all errors.
 Ayuu.mobileWH  = [479, 939, 840]; // the maximum [W,H] (in px) that you assume to be a mobile screen.
 Ayuu.renderMs  = 400;             // ms to wait, for times when browser rendering needs to catch up.
