@@ -584,7 +584,7 @@ Ayuu.Unhide = function(el){ Ayuu.HideMe(el,"unhide"); };
 
 
 Ayuu.RestoreFocus = function(id) {
-  if (id===null){ id = Ayuu.focus.prior; }
+  if (id===null || typeof(id)==="undefined"){ id = Ayuu.focus.prior; }
   if (Ayuu.DEBUG){ Ayuu.Cs(50,[id]) };
   try {
     actUpon(id).focus();
@@ -922,7 +922,8 @@ Ayuu.ChangeLayer = function(newdepth, id) {
         Ayuu.setDepth = Ayuu.focus.depth[0] + newdepth;
         trimLog();
       } else if (newdepth===0) {
-        listenForEsc(false);
+        Ayuu.setDepth = newdepth;
+        trimLog();
       }
     } else if (newdepth==="+1") {   // …moving up by +1
       Ayuu.setDepth = Ayuu.focus.depth[0]+1;
@@ -935,9 +936,8 @@ Ayuu.ChangeLayer = function(newdepth, id) {
 
   function listenForEsc(setstate) {
     // If no `setstate` is specified, assumed as true (ie, yes, start listening).
-    if (!setstate) {
+    if (setstate!==null && !setstate) {
       document.removeEventListener("keydown", Ayuu.Helper.InterceptEsc); 
-      Ayuu.clrDepth = 0;
       if (Ayuu.DEBUG){ Ayuu.Cs(160) }
     } else {
       let delayM = setTimeout(function() {
@@ -946,11 +946,14 @@ Ayuu.ChangeLayer = function(newdepth, id) {
     }
   }
   function trimLog() {
-    if (Ayuu.atDepth<=0){ listenForEsc(false); Ayuu.clrDepth=0; return; }
-    if (Ayuu.atDepth<2) {   // Clears the log of any layer2 markers
+    if (Ayuu.atDepth<=0){
+      listenForEsc(false);
+      Ayuu.clrDepth = 0;
+      return;
+    } else if (Ayuu.atDepth<2) {   // Clears the log of any layer2 markers
       Ayuu.focus.depth[2] = "";
       Ayuu.focus.depth[3] = [0,0];
-      //Ayuu.focus.depth[4] = "";       // TODO: EXTEND?
+      //Ayuu.focus.depth[4] = "";  // TODO: EXTEND?
       //Ayuu.focus.depth[5] = "";
     }
   }
@@ -1120,7 +1123,8 @@ Ayuu.TogTips.Enabled = function(setstate) {
 };
 
 Ayuu.TogTips.HasLeft = function() {
-  // Evaluates true when cursor focus entered a Toggletip but then moved beyond it.
+  // Evaluates true when cursor focus has (earlier) entered inside a Toggletip wrapper, 
+  // but as of this moment has moved beyond it.
 
   let evaluand = Ayuu.focus.depth[3],
       criteria = [1,1];
@@ -1138,8 +1142,9 @@ Ayuu.TogTips.Init = function () {
       countTips,
       ttActionBtns = getClass(Ayuu.TogTips.btnClass),
       countBtns,
-      childLinks,
-      countItsLinks;
+      childElements,
+      childLast,
+      countChildren;
 
   // clicking directly on a keyword (the word, not its button) should close any open toggles:
   countTerms = ttTerms.length;
@@ -1152,72 +1157,124 @@ Ayuu.TogTips.Init = function () {
       }
     });
   }
-  // iterate to empower each trigger btn to open its content
+  // iterate on each tip's trigger btn that it will open the popup content
   countBtns = ttActionBtns.length;
-  for (let i=0; i<countBtns; i++) { 
+  for (let i=0; i<countBtns; i++) {
     ttActionBtns[i].setAttribute("onclick","Ayuu.ToggleMe(this.id)");
   }
 
+  // iterate on each tip's container:
   countTips = ttWrappers.length;
   for (let i=0; i<countTips; i++) {
+    ttWrappers[i].removeAttribute("onfocus");
 
-    ttWrappers[i].addEventListener("focus", function() {
+    childElements = ttWrappers[i].querySelectorAll(Ayuu.DOM.cursorable);
+    countChildren = childElements.length;
+    childLast = childElements.item([countChildren-1]);  // the last one in DOM order
+
+    // record when it has the focus:
+    ttWrappers[i].addEventListener("focus", function(event) {
       let unSuspend;
       Ayuu.focus.suspend = true;
       Ayuu.ttipEntered = 1;
-
       if (Ayuu.DEBUG){ Ayuu.Cs(310) }
-      if (Ayuu.TogTips.HasLeft()) { 
-        event.preventDefault(); 
-        Ayuu.TogTips.CursorHasExited("prior"); 
+      if (Ayuu.TogTips.HasLeft()) {
+        event.preventDefault();
+        Ayuu.TogTips.CursorHasExited("prior");
       } else {
         unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuFast);
       }
     });
 
-    ttWrappers[i].addEventListener("keydown", function() { 
-      // Keypresses inside a tip are being tracked to detect when focus changes:
-      //  *Assumption:* in our UI, all tips include exactly 1 hyperlink which could (ergo) take focus away from the wrapper.
-      
-      let unSuspend;
-      if (!Ayuu.focus.suspend) { 
-        if (!event.shiftKey && event.code == "Tab") {
-          Ayuu.focus.suspend = true;
-          Ayuu.ttipEntered = 1;
-          if (Ayuu.DEBUG){ Ayuu.Cs(320,[1]) }
-          unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuFast);
-        } else if (
-          event.shiftKey && event.code == "Tab") {
-          Ayuu.focus.suspend = true;
-          Ayuu.TogTips.CursorHasExited();
+    switch(countChildren) {
+    case 0:
+      ttWrappers[i].addEventListener("keydown", function(event) { 
+        if (!Ayuu.focus.suspend) {
+          if (!event.shiftKey && event.code == "Tab") {
+            Ayuu.focus.suspend = true;
+            unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuFast);
+            Ayuu.ttipTraverse = 1;
+            if (Ayuu.TogTips.HasLeft()) {
+              event.preventDefault();
+              Ayuu.TogTips.CursorHasExited("prior");
+            }
+          } else if (event.shiftKey && event.code == "Tab") {
+            Ayuu.focus.suspend = true;
+            Ayuu.TogTips.CursorHasExited();
+          }
         }
+      });
+      break;
+
+    default:
+      ttWrappers[i].addEventListener("keydown", function(event) { 
+        let unSuspend;
+        if (!Ayuu.focus.suspend) {
+          if (!event.shiftKey && event.code == "Tab") {
+            Ayuu.focus.suspend = true;
+            Ayuu.ttipEntered = 1;
+            if (Ayuu.DEBUG){ Ayuu.Cs(320,[1]) }
+            unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuFast);
+          } else if (event.shiftKey && event.code == "Tab") {
+            Ayuu.focus.suspend = true;
+            Ayuu.TogTips.CursorHasExited();
+          }
+        }
+      });
+    }
+
+    // iterate on each focusable element inside a tip's container:
+    for (let h=0; h<countChildren; h++) {
+
+      let childLaunches = childElements.item([h]).getAttribute("aria-haspopup");
+
+      childElements.item([h]).removeAttribute("onfocus");
+      if (childLaunches!==null && childLaunches!=="" && childLaunches.length>0) {
+        childElements.item([h]).addEventListener("click", function() {
+          Ayuu.JotFocus(this.id);
+        });
       }
-    });
+      // intervene for Tab keypresses, but not for the last element in DOM order:
+      if (h<countChildren-1) {
+        childElements.item([h]).addEventListener("keydown", function(event) {
 
-    childLinks = ttWrappers[i].getElementsByTagName("A");
-    countItsLinks = childLinks.length;
-    for (let h=0; h<countItsLinks; h++) {
+          let unSuspend;
+          if (!Ayuu.focus.suspend) {
+            if (event.shiftKey && event.code == "Tab") {
+              Ayuu.ttipTraverse = 0;
+              Ayuu.focus.suspend = true;
+              if (Ayuu.DEBUG){ Ayuu.Cs(320,[-1]) }
+              unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuFast);
 
-      childLinks[h].addEventListener("keydown", function() {
+            } else if ( !event.shiftKey && event.code == "Tab") {
+              Ayuu.ttipTraverse = 0;
+              Ayuu.focus.suspend = true;
+              if (Ayuu.DEBUG){ Ayuu.Cs(320,[0]) }
+              unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuFast);
+            }
+          }
+        });
+      }
+    }
+    // special case for the last focusable element inside a tip's container:
+    if (countChildren>0) {
+      childLast.addEventListener("keydown", function(event) {
         let unSuspend;
         if (!Ayuu.focus.suspend) {
           if (event.shiftKey && event.code == "Tab") {
             Ayuu.ttipTraverse = 0;
             Ayuu.focus.suspend = true;
-            unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuFast);
-            
             if (Ayuu.DEBUG){ Ayuu.Cs(320,[-1]) }
+            unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuFast);
 
           } else if ( !event.shiftKey && event.code == "Tab") {
             Ayuu.focus.suspend = true;
+            if (Ayuu.DEBUG){ Ayuu.Cs(320,[2]) }
             unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuFast);
             Ayuu.ttipTraverse = 1;
-
-            if (Ayuu.DEBUG){ Ayuu.Cs(320,[2]) }
-              
-            if (Ayuu.TogTips.HasLeft()) { 
-              event.preventDefault(); 
-              Ayuu.TogTips.CursorHasExited("prior"); 
+            if (Ayuu.TogTips.HasLeft()) {
+              event.preventDefault();
+              Ayuu.TogTips.CursorHasExited("prior");
             }
           }
         }
@@ -1234,8 +1291,8 @@ Ayuu.TogTips.CursorHasExited = function(refocus) {
   if (Ayuu.atDepth!==0) {
     if (Ayuu.DEBUG){ Ayuu.Cs(330,[2]) }
     Ayuu.TogTips.CollapseAll();
-    if (refocus==="prior") { Ayuu.RestoreFocus(); }
   }
+  if (refocus==="prior") { Ayuu.RestoreFocus(); }
   unSuspend = setTimeout(function(){ Ayuu.focus.suspend = false; }, uuMs);
   return;
 };
@@ -1260,7 +1317,7 @@ Ayuu.TogTips.CollapseAll = function(exceptThisId) {
 
   if (typeof(exceptThisId)!=="string") { 
     Ayuu.ChangeLayer(-1);
-    Ayuu.ttipReset = 0;
+    if (Ayuu.atDepth>0) { Ayuu.ttipReset = 0; }
     exceptThisId = "none";
   }
   if (exceptThisId==="passive") { 
@@ -1271,12 +1328,13 @@ Ayuu.TogTips.CollapseAll = function(exceptThisId) {
   allOpenTips = document.querySelectorAll('button[aria-expanded="true"]');
   allOpenCount = allOpenTips.length;
   for (let i=0; i<allOpenCount; i++) {
-    itsTerm = Ayuu.Helper.ExpectedSiblingByClass(allOpenTips[i], Ayuu.TogTips.kwClass);
-    if (itsTerm) {
-      itsTerm[0].classList.remove("active");
-    }
     if (allOpenTips[i].getAttribute("id")!==exceptThisId) {
+
       allOpenTips[i].setAttribute("aria-expanded", "false");
+      itsTerm = Ayuu.Helper.ExpectedSiblingByClass(allOpenTips[i], Ayuu.TogTips.kwClass);
+      if (itsTerm) {
+        itsTerm[0].classList.remove("active");
+      }
     }
   }
 };

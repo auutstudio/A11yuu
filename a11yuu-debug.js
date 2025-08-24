@@ -1,5 +1,5 @@
  /* A11yuu-debug: Verbose reporting to the console
-  * Version: 0.9
+  * Version: 0.9.1
   *
   * Copyright © 2024-2025 auut studio, findauut.com <info@findauut.com>
 
@@ -125,16 +125,18 @@ Ayuu.Cs = function(reporter, data) {
   case 320:
     if (data[0]==1) {
       console.log(ts+Ayuu.indent.sm+"[→Tab] from container ", Ayuu.focus.depth[3].toString());
-    } else if (data[0]== -1) {
-      console.log(ts+Ayuu.indent.sm+"[←Shft+Tab] from link ", Ayuu.focus.depth[3].toString()); 
+    } else if (data[0]==0) {
+      console.log(ts+Ayuu.indent.sm+"[→Tab] from an inner element ", Ayuu.focus.depth[3].toString());
+    } else if (data[0]==-1) {
+      console.log(ts+Ayuu.indent.sm+"[←Shft+Tab] from an inner element ", Ayuu.focus.depth[3].toString()); 
     } else if (data[0]==2) {
-      console.log(ts+Ayuu.indent.sm+"[→Tab] from link ", Ayuu.focus.depth[3].toString()); 
+      console.log(ts+Ayuu.indent.sm+"[→Tab] from last element ", Ayuu.focus.depth[3].toString()); 
     }
     break;
   
   case 330:
     if (data[0]==2) {
-      console.log(ts+Ayuu.indent.sm+"⎵ exited the tip");
+      console.log(ts+"⎵ exited the tip");
     } else if (data[0]==1) {
       console.log(ts+"tip revealed");
     } else if (data[0]==0) {
