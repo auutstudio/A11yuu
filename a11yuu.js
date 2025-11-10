@@ -427,6 +427,7 @@ Ayuu.Helper.generateUniqueId = function(input) {  // expects: String
       sampling = input.slice(-9,-8),
       pieceCount = pieces.length,
       barcode = [],
+      blockLen,
       suffix;
 
   if (sampling==="<"||sampling===" ") { sampling = input.slice(-11,-10); }
