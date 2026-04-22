@@ -52,20 +52,20 @@ body.uu-contrast {
 
 /* Toggle tip styling */
 .uu-terms,
-.uu-define-me {
+.uu-term-explainme {
   font-weight: bold;
 }
 .uu-terms { 
   padding: 0 1px; 
 }
-button[aria-expanded="true"] + div.uu-definition,
-button[aria-expanded="true"] + br + div.uu-definition,
-button[aria-expanded="true"] + br + br + div.uu-definition {
+button[aria-expanded="true"] + div.uu-definition-wrap,
+button[aria-expanded="true"] + br + div.uu-definition-wrap,
+button[aria-expanded="true"] + br + br + div.uu-definition-wrap {
   display: block;
 }
-button[aria-expanded="false"] + div.uu-definition,
-button[aria-expanded="false"] + br + div.uu-definition,
-button[aria-expanded="false"] + br + br + div.uu-definition {
+button[aria-expanded="false"] + div.uu-definition-wrap,
+button[aria-expanded="false"] + br + div.uu-definition-wrap,
+button[aria-expanded="false"] + br + br + div.uu-definition-wrap {
   display: none;
 }
 span.uu-terms.active {
@@ -75,10 +75,10 @@ span.uu-terms.active {
   padding-top: 4px;
   padding-bottom: 4px;
 }
-button.uu-define-me {
+button.uu-term-explainme {
   position: absolute;
 }
-button.uu-define-me[aria-expanded] {
+button.uu-term-explainme[aria-expanded] {
   /* style the button text */
   font-size: 1.7em;
   line-height: 1;
@@ -96,13 +96,13 @@ button.uu-define-me[aria-expanded] {
   top: -4px;
   z-index: 2;
 }
-button.uu-define-me[aria-expanded]:focus {
+button.uu-term-explainme[aria-expanded]:focus {
   border-color: transparent;
   color: cyan;
   background-color: #333 !important;
 }
-button.uu-define-me[aria-expanded]:focus-visible,
-button.uu-define-me[aria-expanded][data-wf-focus-visible] {
+button.uu-term-explainme[aria-expanded]:focus-visible,
+button.uu-term-explainme[aria-expanded][data-wf-focus-visible] {
   outline-style: dashed;
   outline-color: #222;
   outline-width: 2px;
@@ -110,21 +110,21 @@ button.uu-define-me[aria-expanded][data-wf-focus-visible] {
   color: cyan;
   background-color: #333 !important;
 }
-button.uu-define-me[aria-expanded]:hover {
+button.uu-term-explainme[aria-expanded]:hover {
   border-color: white;
   background-color: red !important;
 }
-button.uu-define-me[aria-expanded="true"],
-button.uu-define-me[aria-expanded="true"]:focus,
-button.uu-define-me[aria-expanded="true"]:focus-visible,
-button.uu-define-me[aria-expanded="true"][data-wf-focus-visible] {
+button.uu-term-explainme[aria-expanded="true"],
+button.uu-term-explainme[aria-expanded="true"]:focus,
+button.uu-term-explainme[aria-expanded="true"]:focus-visible,
+button.uu-term-explainme[aria-expanded="true"][data-wf-focus-visible] {
   background-color: #222 !important;
   color: aquamarine;
   z-index: 3;
   font-weight: normal;
   box-shadow: 3px 0 6px 4px #ffffff;
 }
-.uu-definition {
+.uu-definition-wrap {
   right: auto; 
   bottom: auto;
   border: 1px solid #666;
@@ -142,13 +142,13 @@ button.uu-define-me[aria-expanded="true"][data-wf-focus-visible] {
   overflow: auto;
   z-index: 3;
 }
-.uu-definition a {
+.uu-definition-wrap a {
   color: #d3d3d3;
   text-decoration: none;
   border-bottom: 1px dotted #d3d3d3;
   margin-left: 8px;
 }
-.uu-definition p {
+.uu-definition-wrap p {
   font-family: 'PT Sans', sans-serif;
   font-weight: 300;
   font-size: 15px;
@@ -157,7 +157,7 @@ button.uu-define-me[aria-expanded="true"][data-wf-focus-visible] {
 body.uu-hidevocab .uu-terms {
   font-weight: normal;
 }
-body.uu-hidevocab button.uu-define-me {
+body.uu-hidevocab button.uu-term-explainme {
     display: none;
 }
 

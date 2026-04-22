@@ -15,7 +15,7 @@
 /* High Priority variables                            */
 
 window.Ayuu || ( window.Ayuu = {} );
-Ayuu.version   = "0.9.1";
+Ayuu.version   = "0.9.2";
 Ayuu.mode      = "";              // use "production" to trap all errors.
 Ayuu.mobileWH  = [479, 939, 840]; // the maximum [W,H] (in px) that you assume to be a mobile screen.
 Ayuu.renderMs  = 400;             // ms to wait, for times when browser rendering needs to catch up.
@@ -218,7 +218,8 @@ Ayuu.DOM.lightboxPane      = Ayuu.wf.lightbox.pane;
 Ayuu.DOM.lightboxCloseBtn  = Ayuu.wf.lightbox.close;
 Ayuu.DOM.lightboxImg       = Ayuu.wf.lightbox.img;
 Ayuu.DOM.rootApp           = "root_app";     // id of parent node for core content of the page
-Ayuu.DOM.main              = "root_main";    // id of node which is <main> or `[role="main"]`
+Ayuu.DOM.main              = "root_content";    // id of node which holds both the: <main> or `[role="main"]` region, 
+                                                // as well as any `[role="complementary"]` regions
 Ayuu.DOM.rootBBoxes        = "root_modals";  // id of parent for all Better Boxes on the page
 Ayuu.DOM.rootFooter        = "root_footer";  // id of parent node for the footer (if any)
 Ayuu.DOM.menuToggle        = "root_nav_btn"; // id for the container around the Main Menu button
@@ -246,9 +247,9 @@ Ayuu.TogTips.modeON;      // (no class is utilized here)
 Ayuu.TogTips.modeOFF       =   "uu-hidevocab";              // classname on <body> to suppress all toggle tip trigger buttons
 Ayuu.TogTips.triggerIO     =   "btn_vocab_mode";            // a single id of the button that allows/disallows Toggletips
 Ayuu.TogTips.kwClass       =   "uu-terms";
-Ayuu.TogTips.btnClass      =   "uu-define-me";
-Ayuu.TogTips.containerClass=   "uu-definition";
-Ayuu.TogTips.containerLabel=   "uu-definition-handle";
+Ayuu.TogTips.btnClass      =   "uu-term-explainme";
+Ayuu.TogTips.popupClass    =   "uu-definition-wrap";
+Ayuu.TogTips.headingClass  =   "uu-definition-handle";
 Ayuu.contrast.modeON       =   "uu-contrast";               // classname on <body> to render hi-Contrast CSS styling
 Ayuu.contrast.triggersIO   = [ "btn_contrast_mode" ];       // Array:  id(s) of all buttons that toggle Hi-Contrast mode ON/off
 Ayuu.kbshort.modeON        =   "uu-kbshorts";               // classname on <body> for visual changes when shortcuts are ON
@@ -1139,7 +1140,7 @@ Ayuu.TogTips.HasLeft = function() {
 Ayuu.TogTips.Init = function () {
   let ttTerms = getClass(Ayuu.TogTips.kwClass),
       countTerms,
-      ttWrappers = getClass(Ayuu.TogTips.containerClass),
+      ttWrappers = getClass(Ayuu.TogTips.popupClass),
       countTips,
       ttActionBtns = getClass(Ayuu.TogTips.btnClass),
       countBtns,
@@ -1158,10 +1159,49 @@ Ayuu.TogTips.Init = function () {
       }
     });
   }
-  // iterate on each tip's trigger btn that it will open the popup content
+  // iterate on each tip's trigger btn, set essential attributes:
   countBtns = ttActionBtns.length;
-  for (let i=0; i<countBtns; i++) {
-    ttActionBtns[i].setAttribute("onclick","Ayuu.ToggleMe(this.id)");
+  for (let i=0; i<countBtns; i++) { 
+    let termBase, launchesWhat, whatsHeading, launchesWhatName;
+
+    if (!ttActionBtns[i].getAttribute("aria-controls")) {
+      termBase = ttActionBtns[i].previousElementSibling;
+      if (termBase.classList.contains(Ayuu.TogTips.kwClass)) {
+        termBase = termBase.getAttribute("id");
+      } else {
+        if(ttTerms[i].getAttribute("id")) {
+          termBase = ttTerms[i].getAttribute("id");
+        }
+      }
+      if (typeof(termBase)==='string') {
+        launchesWhat     = termBase+"_popup";
+        launchesWhatName = termBase+"_term";
+
+        if (!ttActionBtns[i].getAttribute("id")) {
+          ttActionBtns[i].setAttribute("id", termBase+"_button");
+        }
+        if (ttWrappers[i]) {
+          ttWrappers[i].setAttribute("id", launchesWhat);
+          ttActionBtns[i].setAttribute("aria-controls", launchesWhat);
+          whatsHeading = ttWrappers[i].querySelector(parseAs(".", Ayuu.TogTips.headingClass));
+          
+          if (whatsHeading) {
+            whatsHeading.setAttribute("id", launchesWhatName);
+            ttActionBtns[i].setAttribute("aria-labelledby", "announce_the_term "+launchesWhatName+" announce_pause");
+          }
+
+          // also set essential attributes on each tip's popup container:
+          ttWrappers[i].setAttribute("role", "dialog");
+          ttWrappers[i].setAttribute("tabindex", "0");
+          ttWrappers[i].setAttribute("aria-description", "(Small hovering dialog; press Escape to close.)");
+        }
+      }
+    }
+    ttActionBtns[i].setAttribute("onclick", "Ayuu.ToggleMe(this.id)");
+    ttActionBtns[i].setAttribute("type", "button");
+    ttActionBtns[i].setAttribute("tabindex", "0");
+    ttActionBtns[i].setAttribute("aria-expanded", "false");
+    ttActionBtns[i].setAttribute("aria-haspopup", "dialog");
   }
 
   // iterate on each tip's container:
@@ -1190,6 +1230,7 @@ Ayuu.TogTips.Init = function () {
     switch(countChildren) {
     case 0:
       ttWrappers[i].addEventListener("keydown", function(event) { 
+        let unSuspend;
         if (!Ayuu.focus.suspend) {
           if (!event.shiftKey && event.code == "Tab") {
             Ayuu.focus.suspend = true;
@@ -1362,7 +1403,7 @@ Ayuu.ToggleMe = function(id) {
     Ayuu.ChangeLayer("+1","term");
     Ayuu.focus.prior = id;
     if (typeof(relatedTerm[1])==="string") {
-        document.getElementById(relatedTerm[1]+"_defined").focus();
+        document.getElementById(relatedTerm[1]+"_popup").focus();
     }
   } else {
 
